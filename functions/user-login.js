@@ -6,7 +6,19 @@ exports.handler = async (event, context) => {
     const username = data.get('username');
     const password = data.get('password');
 
-    //// TODO: Validate input
+    const userRe = /^[a-zA-Z]\w{4,29}$/;
+    const pwdRe = /^[a-zA-Z]\S{11,}$/;
+
+    // Validate input
+    if(!userRe.test(username) || !pwdRe.test(password)) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({
+                status: "failure",
+                error: "Invalid credentials"
+            })
+        }
+    }
 
     const db = new PouchDb('test-db');
 

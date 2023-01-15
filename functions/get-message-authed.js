@@ -5,6 +5,7 @@ exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
     const token = data.get('token');
 
+    // Verify the passed token
     try {
         const verified = verifyToken(token);
         console.log(verified);
@@ -20,6 +21,7 @@ exports.handler = async (event, context) => {
         };
     }
 
+    // Return the data to authorized requests
     return {
         statusCode: 200,
         body: JSON.stringify({

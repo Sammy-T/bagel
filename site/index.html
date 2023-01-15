@@ -13,9 +13,13 @@
         <main class="container">
             <h1>Headless Project</h1>
 
-            <form id="test-form">
-                <input type="text" name="username" required>
-                <input type="password" name="password" required>
+            <form id="credential-form">
+                <input type="text" name="username" pattern="^[a-zA-Z]\w{4,29}$" 
+                    title="Username must start with a letter and contain 
+                        between 5-30 characters. Allowed characters a-z, 0-9, _" required>
+                <input type="password" name="password" pattern="^[a-zA-Z]\S{11,}$"
+                    title="Password must start with a letter and contain
+                        12 or more characters." required>
                 <select name="action">
                     <option value="signup">Sign up</option>
                     <option value="login">Log in</option>
@@ -29,7 +33,7 @@
             </form>
         </main>
         <script>
-            const form = document.querySelector('#test-form');
+            const form = document.querySelector('#credential-form');
             const verifyForm = document.querySelector('#verify-form');
 
             form.addEventListener('submit', async (event) => {

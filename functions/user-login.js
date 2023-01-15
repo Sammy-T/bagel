@@ -6,12 +6,16 @@ exports.handler = async (event, context) => {
     const username = data.get('username');
     const password = data.get('password');
 
+    //// TODO: Validate input
+
     const db = new PouchDb('test-db');
 
+    // Attempt to retrieve the document with the matching id(username in this case).
     try {
         const doc = await db.get(username);
         console.log(doc);
 
+        // Throw an error if the entered password is invalid
         if(password !== doc.password) {
             const error = new Error('Access Denied');
             error.code = 401;
@@ -28,6 +32,7 @@ exports.handler = async (event, context) => {
         };
     }
 
+    // Create the token then return it on the response
     const token = createToken(username);
 
     return {

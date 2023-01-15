@@ -1,4 +1,5 @@
 const PouchDb = require('pouchdb');
+const bcrypt = require('bcryptjs');
 const createToken = require('./auth/create-token.js');
 
 exports.handler = async (event, context) => {
@@ -27,8 +28,10 @@ exports.handler = async (event, context) => {
         const doc = await db.get(username);
         console.log(doc);
 
+        const pwdIsValid = await bcrypt.compare(password, doc.password);
+
         // Throw an error if the entered password is invalid
-        if(password !== doc.password) {
+        if(!pwdIsValid) {
             const error = new Error('Access Denied');
             error.code = 401;
             throw error;

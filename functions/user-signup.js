@@ -1,4 +1,5 @@
 const PouchDb = require('pouchdb');
+const bcrypt = require('bcryptjs');
 const createToken = require('./auth/create-token.js');
 
 exports.handler = async (event, context) => {
@@ -20,6 +21,23 @@ exports.handler = async (event, context) => {
         }
     }
 
+    let hashedPwd;
+
+    // Hash the password
+    try {
+        const salt = await bcrypt.genSalt(10);
+        hashedPwd = await bcrypt.hash(password, salt);
+    } catch(err) {
+        console.error(err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                status: "failure",
+                error: "Unable to process credentials"
+            })
+        }
+    }
+
     const db = new PouchDb('test-db');
 
     // Attempt to store the user in the db.
@@ -27,7 +45,7 @@ exports.handler = async (event, context) => {
         const doc = await db.put({
             _id: username,
             username: username,
-            password: password
+            password: hashedPwd
         });
         console.log(doc);
     } catch(err) {

@@ -12,6 +12,82 @@
     <body>
         <main class="container">
             <h1>Headless Project</h1>
+
+            <form id="test-form">
+                <input type="text" name="username" required>
+                <input type="password" name="password" required>
+                <select name="action">
+                    <option value="signup">Sign up</option>
+                    <option value="login">Log in</option>
+                </select>
+                <button type="submit">Submit</button>
+            </form>
+
+            <form id="verify-form">
+                <input type="text" name="token" required>
+                <button type="submit">Verify</button>
+            </form>
         </main>
+        <script>
+            const form = document.querySelector('#test-form');
+            const verifyForm = document.querySelector('#verify-form');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const data = new URLSearchParams(new FormData(form));
+                console.log(data.toString());
+                let endpoint;
+
+                switch(data.get('action')) {
+                    case 'signup':
+                        endpoint = '.netlify/functions/user-signup';
+                        break;
+                    case 'login':
+                        endpoint = '.netlify/functions/user-login';
+                        break;
+                }
+                
+                try {
+                    const resp = await fetch(endpoint, {
+                        method: 'post',
+                        body: data
+                    });
+                    const respJson = await resp.json();
+                    
+                    if(!resp.ok) {
+                        console.warn(respJson);
+                        throw new Error('Network response was not ok.');
+                    }
+
+                    console.log(respJson);
+                } catch(e) {
+                    console.error(e);
+                }
+            });
+
+            verifyForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const data = new URLSearchParams(new FormData(verifyForm));
+
+                try {
+                    const resp = await fetch('.netlify/functions/get-message-authed', {
+                        method: 'post',
+                        body: data
+                    });
+                    const respJson = await resp.json();
+                    
+                    if(!resp.ok) {
+                        console.warn(respJson);
+                        throw new Error('Network response was not ok.');
+                    }
+
+                    console.log(respJson);
+                } catch(e) {
+                    console.error(e);
+                }
+            });
+        </script>
     </body>
 </html>

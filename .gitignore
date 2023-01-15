@@ -145,3 +145,6 @@ dist
 
 # Local Netlify folder
 .netlify
+
+# Local Pouchdb files
+test-db/

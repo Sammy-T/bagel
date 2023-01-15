@@ -1,5 +1,5 @@
 {
-  "name": "borrowed-auth-functions",
+  "name": "chalkboard-auth-functions",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -11,7 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@picocss/pico": "^1.5.6"
+    "@picocss/pico": "^1.5.6",
+    "jsonwebtoken": "^9.0.0",
+    "pouchdb": "^8.0.0"
   },
   "devDependencies": {
     "vite": "^4.0.4"

@@ -14,12 +14,12 @@
             <h1>Headless Project</h1>
 
             <form id="credential-form">
-                <input type="text" name="username" pattern="^[a-zA-Z]\w{4,29}$" 
-                    title="Username must start with a letter and contain 
-                        between 5-30 characters. Allowed characters a-z, 0-9, _" required>
-                <input type="password" name="password" pattern="^[a-zA-Z]\S{11,}$"
-                    title="Password must start with a letter and contain
-                        12 or more characters." required>
+                <div class="grid">
+                    <input type="text" name="username" placeholder="Username" pattern="^[a-zA-Z]\w{4,29}$" 
+                        title="Username must start with a letter and contain between 5-30 characters. Allowed characters a-z, 0-9, _" required>
+                    <input type="password" name="password" placeholder="Password" pattern="^[a-zA-Z]\S{11,}$" 
+                        title="Password must start with a letter and contain 12 or more characters." required>
+                </div>
                 <select name="action">
                     <option value="signup">Sign up</option>
                     <option value="login">Log in</option>
@@ -27,14 +27,18 @@
                 <button type="submit">Submit</button>
             </form>
 
-            <form id="verify-form">
-                <input type="text" name="token" required>
-                <button type="submit">Verify</button>
+            <form id="token-form">
+                <input type="text" name="token" placeholder="Token" required>
+                <div class="grid">
+                    <button type="submit" name="verify">Verify</button>
+                    <button type="submit" name="refresh">Refresh</button>
+                </div>
             </form>
         </main>
+
         <script>
             const form = document.querySelector('#credential-form');
-            const verifyForm = document.querySelector('#verify-form');
+            const tokenForm = document.querySelector('#token-form');
 
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
@@ -70,13 +74,23 @@
                 }
             });
 
-            verifyForm.addEventListener('submit', async (event) => {
+            tokenForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
-                const data = new URLSearchParams(new FormData(verifyForm));
+                const data = new URLSearchParams(new FormData(tokenForm));
+                let endpoint;
+                
+                switch(event.submitter.name) {
+                    case 'verify':
+                        endpoint = '.netlify/functions/get-message-authed';
+                        break;
+                    case 'refresh':
+                        endpoint = '.netlify/functions/refresh-auth';
+                        break;
+                }
 
                 try {
-                    const resp = await fetch('.netlify/functions/get-message-authed', {
+                    const resp = await fetch(endpoint, {
                         method: 'post',
                         body: data
                     });

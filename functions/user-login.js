@@ -41,7 +41,7 @@ exports.handler = async (event, context) => {
             throw error;
         }
 
-        doc.refreshTokens = [refreshToken];
+        doc.refreshTokens = [{ token: refreshToken, used: false }];
 
         // Update the stored user info with the new token
         const resp = await db.put(doc);

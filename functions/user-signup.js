@@ -50,7 +50,7 @@ exports.handler = async (event, context) => {
             _id: username,
             username: username,
             password: hashedPwd,
-            refreshTokens: [refreshToken]
+            refreshTokens: [{ token: refreshToken, used: false }]
         });
         console.log(resp);
     } catch(err) {

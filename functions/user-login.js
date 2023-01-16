@@ -21,6 +21,10 @@ exports.handler = async (event, context) => {
         }
     }
 
+    // Create the tokens
+    const accessToken = createToken(username);
+    const refreshToken = createToken(username, true);
+
     const db = new PouchDb('test-db');
 
     // Attempt to retrieve the document with the matching id(username in this case).
@@ -36,6 +40,12 @@ exports.handler = async (event, context) => {
             error.code = 401;
             throw error;
         }
+
+        doc.refreshTokens = [refreshToken];
+
+        // Update the stored user info with the new token
+        const resp = await db.put(doc);
+        console.log(resp);
     } catch(err) {
         console.error(err);
         return {
@@ -47,14 +57,13 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Create the token then return it on the response
-    const token = createToken(username);
-
+    // Return the tokens on the response
     return {
         statusCode: 200,
         body: JSON.stringify({
             status: "success",
-            token: token 
+            accessToken: accessToken,
+            refreshToken: refreshToken 
         })
     };
 };

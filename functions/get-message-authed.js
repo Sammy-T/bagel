@@ -3,11 +3,11 @@ const verifyToken = require('./auth/verify-token.js');
 
 exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
-    const token = data.get('token');
+    const accessToken = data.get('token');
 
     // Verify the passed token
     try {
-        const verified = verifyToken(token);
+        const verified = verifyToken(accessToken);
         console.log(verified);
         console.log(verified.username);
     } catch(err) {

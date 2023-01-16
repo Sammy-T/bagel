@@ -38,16 +38,21 @@ exports.handler = async (event, context) => {
         }
     }
 
+    // Create the tokens
+    const accessToken = createToken(username);
+    const refreshToken = createToken(username, true);
+
     const db = new PouchDb('test-db');
 
     // Attempt to store the user in the db.
     try {
-        const doc = await db.put({
+        const resp = await db.put({
             _id: username,
             username: username,
-            password: hashedPwd
+            password: hashedPwd,
+            refreshTokens: [refreshToken]
         });
-        console.log(doc);
+        console.log(resp);
     } catch(err) {
         console.error(err);
         return {
@@ -59,14 +64,13 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Create the token then return it on the response
-    const token = createToken(username);
-
+    // Return the tokens on the response
     return {
         statusCode: 200,
         body: JSON.stringify({
             status: "success",
-            token: token 
+            accessToken: accessToken,
+            refreshToken: refreshToken 
         })
     };
 };

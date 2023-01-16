@@ -1,5 +1,5 @@
 const PouchDb = require('pouchdb');
-const message = require('./data/message.json');
+const defaultHeaders = require('./util/default-headers.json');
 const verifyToken = require('./auth/verify-token.js');
 const createToken = require('./auth/create-token.js');
 
@@ -18,6 +18,7 @@ exports.handler = async (event, context) => {
         console.error(err);
         return {
             statusCode: 401,
+            headers: defaultHeaders,
             body: JSON.stringify({
                 status: 'failure',
                 error: err.message
@@ -84,6 +85,7 @@ exports.handler = async (event, context) => {
         console.error(err);
         return {
             statusCode: err.status || err.code || 500,
+            headers: defaultHeaders,
             body: JSON.stringify({
                 status: "failure",
                 error: err.message
@@ -94,6 +96,7 @@ exports.handler = async (event, context) => {
     // Return the tokens on the response
     return {
         statusCode: 200,
+        headers: defaultHeaders,
         body: JSON.stringify({
             status: "success",
             accessToken: accessToken,

@@ -1,6 +1,7 @@
 const PouchDb = require('pouchdb');
 const bcrypt = require('bcryptjs');
 const createToken = require('./auth/create-token.js');
+const defaultHeaders = require('./util/default-headers.json');
 
 exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
@@ -14,6 +15,7 @@ exports.handler = async (event, context) => {
     if(!userRe.test(username) || !pwdRe.test(password)) {
         return {
             statusCode: 400,
+            headers: defaultHeaders,
             body: JSON.stringify({
                 status: "failure",
                 error: "Invalid credentials"
@@ -50,6 +52,7 @@ exports.handler = async (event, context) => {
         console.error(err);
         return {
             statusCode: err.status || err.code || 500,
+            headers: defaultHeaders,
             body: JSON.stringify({
                 status: "failure",
                 error: err.message
@@ -60,6 +63,7 @@ exports.handler = async (event, context) => {
     // Return the tokens on the response
     return {
         statusCode: 200,
+        headers: defaultHeaders,
         body: JSON.stringify({
             status: "success",
             accessToken: accessToken,

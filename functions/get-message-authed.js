@@ -1,3 +1,4 @@
+const defaultHeaders = require('./util/default-headers.json');
 const message = require('./data/message.json');
 const verifyToken = require('./auth/verify-token.js');
 
@@ -14,6 +15,7 @@ exports.handler = async (event, context) => {
         console.error(err);
         return {
             statusCode: 401,
+            headers: defaultHeaders,
             body: JSON.stringify({
                 status: 'failure',
                 error: err.message
@@ -24,6 +26,7 @@ exports.handler = async (event, context) => {
     // Return the data to authorized requests
     return {
         statusCode: 200,
+        headers: defaultHeaders,
         body: JSON.stringify({
             status: 'success',
             data: message

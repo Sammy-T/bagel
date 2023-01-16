@@ -58,13 +58,14 @@ exports.handler = async (event, context) => {
                 tokenStatus.used = true;
             }
 
+            // Add the tokens which are still valid to the array
             if(verifiedToken) {
                 validTokens.push(tokenStatus);
             }
         });
 
-        // Set the new refreshTokens value to the valid tokens
-        // if the current refresh token is valid and unused.
+        // Update the stored valid refresh tokens.
+        // If the current refresh token is untracked or used drop all of the user's stored tokens.
         doc.refreshTokens = isInDb && !isAlreadyUsed ? validTokens : [];
         console.log(doc);
 
@@ -72,8 +73,8 @@ exports.handler = async (event, context) => {
         const resp = await db.put(doc);
         console.log(resp);
 
-        // Throw an error if the refresh token is not in the db
-        // or if this is a duplicate use.
+        // Throw an error if the current refresh token is untracked or used
+        // as this is likely a questionable or duplicate attempt.
         if(!isInDb || isAlreadyUsed) {
             const error = new Error('Access Denied');
             error.code = 401;

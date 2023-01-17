@@ -1,6 +1,7 @@
 const PouchDb = require('pouchdb');
 const bcrypt = require('bcryptjs');
-const createToken = require('./auth/create-token.js');
+const createToken = require('./auth/create-token');
+const createTokenCookies = require('./auth/create-token-cookies');
 const defaultHeaders = require('./util/default-headers.json');
 
 exports.handler = async (event, context) => {
@@ -60,14 +61,16 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Return the tokens on the response
+    const cookies = createTokenCookies(accessToken, refreshToken);
+
+    // Return the tokens in the response cookies
     return {
         statusCode: 200,
         headers: defaultHeaders,
+        multiValueHeaders: { 'Set-Cookie': cookies },
         body: JSON.stringify({
             status: "success",
-            accessToken: accessToken,
-            refreshToken: refreshToken 
+            message: "Valid credentials"
         })
     };
 };

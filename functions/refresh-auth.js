@@ -1,11 +1,15 @@
+const cookie = require('cookie');
 const PouchDb = require('pouchdb');
+const verifyToken = require('./auth/verify-token');
+const createToken = require('./auth/create-token');
+const createTokenCookies = require('./auth/create-token-cookies');
 const defaultHeaders = require('./util/default-headers.json');
-const verifyToken = require('./auth/verify-token.js');
-const createToken = require('./auth/create-token.js');
 
 exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
-    const refreshToken = data.get('token');
+    const cookies = cookie.parse(event.headers.cookie);
+
+    const refreshToken = data.get('token') || cookies['cba.auth.ref'];
 
     let verified;
 
@@ -29,7 +33,7 @@ exports.handler = async (event, context) => {
     const { username } = verified;
 
     // Create the tokens
-    const accessToken = createToken(username);
+    const newAccessToken = createToken(username);
     const newRefreshToken = createToken(username, true);
 
     const db = new PouchDb('test-db');
@@ -93,14 +97,16 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Return the tokens on the response
+    const newCookies = createTokenCookies(newAccessToken, newRefreshToken);
+
+    // Return the tokens in the response cookies
     return {
         statusCode: 200,
         headers: defaultHeaders,
+        multiValueHeaders: { 'Set-Cookie': newCookies },
         body: JSON.stringify({
             status: "success",
-            accessToken: accessToken,
-            refreshToken: newRefreshToken 
+            message: "Valid token: refresh authorized"
         })
     };
 };

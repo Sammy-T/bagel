@@ -36,7 +36,7 @@ exports.handler = async (event, context) => {
     const newAccessToken = createToken(username);
     const newRefreshToken = createToken(username, true);
 
-    const db = new PouchDb('test-db');
+    const db = new PouchDb(process.env.DB_NAME);
 
     try {
         const doc = await db.get(username);

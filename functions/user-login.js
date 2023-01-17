@@ -28,7 +28,7 @@ exports.handler = async (event, context) => {
     const accessToken = createToken(username);
     const refreshToken = createToken(username, true);
 
-    const db = new PouchDb('test-db');
+    const db = new PouchDb(process.env.DB_NAME);
 
     // Attempt to retrieve the document with the matching id(username in this case).
     try {

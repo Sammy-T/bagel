@@ -1,9 +1,13 @@
+const faunadb = require('faunadb');
 const cookie = require('cookie');
-const PouchDb = require('pouchdb');
+const parseRef = require('./util/db/parse-ref');
 const verifyToken = require('./auth/verify-token');
 const createToken = require('./auth/create-token');
 const createTokenCookies = require('./auth/create-token-cookies');
 const defaultHeaders = require('./util/default-headers.json');
+
+const db = new faunadb.Client({ secret: process.env.SERVER_KEY });
+const q = faunadb.query;
 
 exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
@@ -17,7 +21,7 @@ exports.handler = async (event, context) => {
     try {
         verified = verifyToken(refreshToken, true);
         console.log(verified);
-        console.log(verified.username);
+        console.log(verified.userRef);
     } catch(err) {
         console.error(err);
         return {
@@ -30,68 +34,105 @@ exports.handler = async (event, context) => {
         };
     }
 
-    const { username } = verified;
+    const userRef = parseRef(verified.userRef);
+    const tokenData = { userRef: verified.userRef };
 
     // Create the tokens
-    const newAccessToken = createToken(username);
-    const newRefreshToken = createToken(username, true);
-
-    const db = new PouchDb(process.env.DB_NAME);
+    const newAccessToken = createToken(tokenData);
+    const newRefreshToken = createToken(tokenData, true);
 
     try {
-        const doc = await db.get(username);
+        const tokensResp = await db.query(
+            q.Map(
+                q.Paginate(q.Match(q.Index('TokensByUser'), userRef)),
+                q.Lambda('tokenRef', q.Get(q.Var('tokenRef')))
+            )
+        );
 
-        let isInDb = false;
+        let currentTokenRef;
         let isAlreadyUsed = false;
-        let validTokens = [{ token: newRefreshToken, used: false }];
-        
-        doc.refreshTokens.forEach(tokenStatus => {
-            const { token, used } = tokenStatus;
+        let invalidTokenRefs = [];
+
+        tokensResp.data.forEach(tokenDoc => {
+            const { token, used } = tokenDoc.data;
             let verifiedToken;
+            console.log(tokenDoc.ref);
 
             // Check if the token is still valid
             try {
                 verifiedToken = verifyToken(token, true);
             } catch(e) {
-                console.warn(e);
+                console.warn(`Db token expired: ${tokenDoc.ref}\n`, e);
             }
 
             // Update the status if it's the current refresh token
             if(token === refreshToken) {
-                isInDb = true;
+                currentTokenRef = tokenDoc.ref;
                 isAlreadyUsed = used;
-                tokenStatus.used = true;
             }
 
             // Add the tokens which are still valid to the array
-            if(verifiedToken) {
-                validTokens.push(tokenStatus);
+            if(!verifiedToken) {
+                invalidTokenRefs.push(tokenDoc.ref);
             }
         });
 
-        // Update the stored valid refresh tokens.
-        // If the current refresh token is untracked or used drop all of the user's stored tokens.
-        doc.refreshTokens = isInDb && !isAlreadyUsed ? validTokens : [];
-        console.log(doc);
+        // Check if the current refresh token is untracked or used
+        if(!currentTokenRef || isAlreadyUsed) {
+            const tokenRefs = tokensResp.data.map(doc => doc.ref);
 
-        // Update the stored user info with the new token(s)
-        const resp = await db.put(doc);
-        console.log(resp);
+            // Delete all tokens on user
+            const delResp = await db.query(
+                q.Map(
+                    tokenRefs,
+                    q.Lambda('tokenRef', q.Delete(q.Var('tokenRef')))
+                )
+            );
+            console.log('del resp:\n', delResp);
 
-        // Throw an error if the current refresh token is untracked or used
-        // as this is likely a questionable or duplicate attempt.
-        if(!isInDb || isAlreadyUsed) {
-            const error = new Error('Access Denied');
-            error.code = 401;
+            // Throw an error as this is likely a questionable or duplicate attempt.
+            const error = new Error('Request Denied');
+            error.status = 401;
             throw error;
         }
+
+        // Delete invalid tokens
+        if(invalidTokenRefs.length > 0) {
+            const delResp = await db.query(
+                q.Map(
+                    invalidTokenRefs,
+                    q.Lambda('tokenRef', q.Delete(q.Var('tokenRef')))
+                )
+            );
+            console.log('del resp:\n', delResp);
+        }
+
+        // Update current token's status
+        await db.query(
+            q.Update(
+                currentTokenRef,
+                { data: { used: true }}
+            )
+        );
+        
+        // Update the db with the new token
+        await db.query(
+            q.Create(
+                q.Collection('Tokens'),
+                { data: {
+                    token: newRefreshToken,
+                    used: false,
+                    user: userRef
+                }}
+            )
+        );
     } catch(err) {
         console.error(err);
         return {
-            statusCode: err.status || err.code || 500,
+            statusCode: err.requestResult?.statusCode || err.status || 500,
             headers: defaultHeaders,
             body: JSON.stringify({
-                status: "failure",
+                status: 'failure',
                 error: err.message
             })
         };
@@ -105,8 +146,8 @@ exports.handler = async (event, context) => {
         headers: defaultHeaders,
         multiValueHeaders: { 'Set-Cookie': newCookies },
         body: JSON.stringify({
-            status: "success",
-            message: "Valid token: refresh authorized"
+            status: 'success',
+            message: 'Valid token. Refresh authorized.'
         })
     };
 };

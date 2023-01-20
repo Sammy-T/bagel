@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
     try {
         const verified = verifyToken(accessToken);
         console.log(verified);
-        console.log(verified.username);
+        console.log(verified.userRef);
     } catch(err) {
         console.error(err);
         return {

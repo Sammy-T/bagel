@@ -1,8 +1,11 @@
-const PouchDb = require('pouchdb');
+const faunadb = require('faunadb');
 const bcrypt = require('bcryptjs');
 const createToken = require('./auth/create-token');
 const createTokenCookies = require('./auth/create-token-cookies');
 const defaultHeaders = require('./util/default-headers.json');
+
+const db = new faunadb.Client({ secret: process.env.SERVER_KEY });
+const q = faunadb.query;
 
 exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
@@ -18,44 +21,56 @@ exports.handler = async (event, context) => {
             statusCode: 400,
             headers: defaultHeaders,
             body: JSON.stringify({
-                status: "failure",
-                error: "Invalid credentials"
+                status: 'failure',
+                error: 'Invalid credentials'
             })
         }
     }
 
-    // Create the tokens
-    const accessToken = createToken(username);
-    const refreshToken = createToken(username, true);
+    let accessToken;
+    let refreshToken;
 
-    const db = new PouchDb(process.env.DB_NAME);
-
-    // Attempt to retrieve the document with the matching id(username in this case).
+    // Attempt to retrieve the document with the matching username
     try {
-        const doc = await db.get(username);
-        console.log(doc);
+        const userDoc = await db.query(
+            q.Get(
+                q.Match(q.Index('UserByUsername'), username)
+            )
+        );
 
-        const pwdIsValid = await bcrypt.compare(password, doc.password);
+        const pwdIsValid = await bcrypt.compare(password, userDoc.data.password);
 
         // Throw an error if the entered password is invalid
         if(!pwdIsValid) {
             const error = new Error('Access Denied');
-            error.code = 401;
+            error.status = 401;
             throw error;
         }
 
-        doc.refreshTokens = [{ token: refreshToken, used: false }];
+        const tokenData = { userRef: userDoc.ref };
 
-        // Update the stored user info with the new token
-        const resp = await db.put(doc);
-        console.log(resp);
+        // Create the tokens
+        accessToken = createToken(tokenData);
+        refreshToken = createToken(tokenData, true);
+
+        // Update the db with the new token
+        await db.query(
+            q.Create(
+                q.Collection('Tokens'),
+                { data: {
+                    token: refreshToken,
+                    used: false,
+                    user: userDoc.ref
+                }}
+            )
+        );
     } catch(err) {
         console.error(err);
         return {
-            statusCode: err.status || err.code || 500,
+            statusCode: err.requestResult?.statusCode || err.status || 500,
             headers: defaultHeaders,
             body: JSON.stringify({
-                status: "failure",
+                status: 'failure',
                 error: err.message
             })
         };
@@ -69,8 +84,8 @@ exports.handler = async (event, context) => {
         headers: defaultHeaders,
         multiValueHeaders: { 'Set-Cookie': cookies },
         body: JSON.stringify({
-            status: "success",
-            message: "Valid credentials"
+            status: 'success',
+            message: 'Valid credentials'
         })
     };
 };

@@ -4,7 +4,7 @@ const q = faunadb.query;
 /**
  * A helper to parse the Fauna ref from the value stored in the token.
  * @param {*} refObj 
- * @returns {faunadb.Expr}
+ * @returns {faunadb.Expr} faunaRef
  */
 function parseRef(refObj) {
     const { id } = refObj['@ref'];

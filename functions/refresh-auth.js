@@ -11,7 +11,7 @@ const q = faunadb.query;
 
 exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
-    const cookies = cookie.parse(event.headers.cookie);
+    const cookies = (event.headers.cookie) ? cookie.parse(event.headers.cookie) : {};
 
     const refreshToken = data.get('token') || cookies['cba.auth.ref'];
 
@@ -24,11 +24,14 @@ exports.handler = async (event, context) => {
         console.log(verified.userRef);
     } catch(err) {
         console.error(err);
+        const errCode = 401;
+
         return {
-            statusCode: 401,
+            statusCode: errCode,
             headers: defaultHeaders,
             body: JSON.stringify({
                 status: 'failure',
+                code: errCode,
                 error: err.message
             })
         };
@@ -128,11 +131,14 @@ exports.handler = async (event, context) => {
         );
     } catch(err) {
         console.error(err);
+        const errCode = err.requestResult?.statusCode || err.status || 500;
+
         return {
-            statusCode: err.requestResult?.statusCode || err.status || 500,
+            statusCode: errCode,
             headers: defaultHeaders,
             body: JSON.stringify({
                 status: 'failure',
+                code: errCode,
                 error: err.message
             })
         };

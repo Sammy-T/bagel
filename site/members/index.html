@@ -7,20 +7,29 @@
         <title>Members</title>
 
         <link rel="stylesheet" href="../css/styles.css">
-        <script type="module" src="../js/token.js"></script>
+        <script type="module" src="../js/members.js"></script>
     </head>
 
     <body>
         <main class="container">
             <h1>Members</h1>
 
-            <form id="token-form">
-                <input type="text" name="token" placeholder="Token">
-                <div class="grid">
-                    <button type="submit" name="verify">Verify</button>
-                    <button type="submit" name="refresh">Refresh</button>
-                </div>
-            </form>
+            <div id="response">
+                <article aria-busy="true"></article>
+            </div>
         </main>
+
+        <template id="template-msg">
+            <article>
+                <h2 id="resp-text">Response</h2>
+            </article>
+        </template>
+
+        <template id="template-login">
+            <article>
+                <h2>Log in to view content</h2>
+                <a href="/" role="button">Log in</a>
+            </article>
+        </template>
     </body>
 </html>

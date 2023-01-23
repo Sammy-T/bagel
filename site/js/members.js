@@ -1,6 +1,7 @@
 const responseArea = document.querySelector('#response');
 const templateMsg = document.querySelector('#template-msg');
 const templateLogin = document.querySelector('#template-login');
+const templateCredit = document.querySelector('#template-credit');
 
 let tries = 3;
 
@@ -11,12 +12,22 @@ function displayLoginMsg() {
     responseArea.append(loginMsg);
 }
 
-function displayMsg(msgText) {
+function displayMsg(respData) {
     const msg = templateMsg.content.firstElementChild.cloneNode(true);
-    msg.querySelector('#resp-text').textContent = msgText;
+    msg.querySelector('#resp-text').textContent = respData.message;
+
+    msg.style['background-image'] = `url('${respData.image}')`;
+    msg.style['background-size'] = 'cover';
 
     responseArea.innerHTML = '';
     responseArea.append(msg);
+
+    const credit = templateCredit.content.firstElementChild.cloneNode(true);
+    const creditLink = credit.querySelector('a');
+    creditLink.textContent = respData.credit;
+    creditLink.href = respData.creditLink;
+
+    document.querySelector('footer').append(credit);
 }
 
 async function getData() {
@@ -36,7 +47,7 @@ async function getData() {
 
         console.log(respJson);
 
-        displayMsg(respJson.data.message);
+        displayMsg(respJson.data);
     } catch(e) {
         console.error(e);
 

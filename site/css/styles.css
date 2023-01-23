@@ -1,5 +1,22 @@
 @import '@picocss/pico';
 
+html {
+    background-image: url('/img/pexels-malidate-van-784632.jpg');
+    background-size: cover;
+}
+
+article {
+    min-height: 60vh;
+}
+
+footer {
+    text-align: center;
+}
+
+footer small {
+    display: block;
+}
+
 .error-msg {
     color: var(--form-element-invalid-active-border-color);
 }

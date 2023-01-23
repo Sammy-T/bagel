@@ -17,11 +17,14 @@ exports.handler = async (event, context) => {
 
     // Validate input
     if(!userRe.test(username) || !pwdRe.test(password)) {
+        const errCode = 400;
+
         return {
-            statusCode: 400,
+            statusCode: errCode,
             headers: defaultHeaders,
             body: JSON.stringify({
                 status: 'failure',
+                code: errCode,
                 error: 'Invalid credentials'
             })
         }
@@ -66,11 +69,14 @@ exports.handler = async (event, context) => {
         );
     } catch(err) {
         console.error(err);
+        const errCode = err.requestResult?.statusCode || err.status || 500;
+
         return {
-            statusCode: err.requestResult?.statusCode || err.status || 500,
+            statusCode: errCode,
             headers: defaultHeaders,
             body: JSON.stringify({
                 status: 'failure',
+                code: errCode,
                 error: err.message
             })
         };

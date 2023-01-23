@@ -2,8 +2,10 @@ const form = document.querySelector('#credential-form');
 const responseArea = document.querySelector('#response');
 const templateError = document.querySelector('#template-error');
 
-function displayError() {
-    const errorDisplay = templateError.content.cloneNode(true);
+function displayError(err) {
+    const errorDisplay = templateError.content.firstElementChild.cloneNode(true);
+    errorDisplay.textContent = (err.status < 500) ? 'Invalid credentials' : 'Server Error';
+
     responseArea.innerHTML = '';
     responseArea.append(errorDisplay);
 }
@@ -32,8 +34,11 @@ form.addEventListener('submit', async (event) => {
         const respJson = await resp.json();
         
         if(!resp.ok) {
-            console.warn(respJson);
-            throw new Error('Network response was not ok.');
+            console.warn('Login/Signup error', respJson);
+
+            const error = new Error(respJson.error || 'Network response was not ok.');
+            error.status = respJson.code;
+            throw error;
         }
 
         // Currently Vite requires trailing slash for nested index files in dev
@@ -41,6 +46,6 @@ form.addEventListener('submit', async (event) => {
         location.href = '/members/';
     } catch(e) {
         console.error(e);
-        displayError();
+        displayError(e);
     }
 });

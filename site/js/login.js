@@ -1,4 +1,12 @@
 const form = document.querySelector('#credential-form');
+const responseArea = document.querySelector('#response');
+const templateError = document.querySelector('#template-error');
+
+function displayError() {
+    const errorDisplay = templateError.content.cloneNode(true);
+    responseArea.innerHTML = '';
+    responseArea.append(errorDisplay);
+}
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -33,5 +41,6 @@ form.addEventListener('submit', async (event) => {
         location.href = '/members/';
     } catch(e) {
         console.error(e);
+        displayError();
     }
 });

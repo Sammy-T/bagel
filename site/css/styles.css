@@ -1,1 +1,5 @@
 @import '@picocss/pico';
+
+.error-msg {
+    color: var(--form-element-invalid-active-border-color);
+}

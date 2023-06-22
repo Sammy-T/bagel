@@ -1,6 +1,7 @@
 const faunadb = require('faunadb');
 const cookie = require('cookie');
 const parseRef = require('./util/db/parse-ref');
+const { verifyTokenWithDb } = require('./util/db/stored-tokens');
 const verifyToken = require('./auth/verify-token');
 const createToken = require('./auth/create-token');
 const createTokenCookies = require('./auth/create-token-cookies');
@@ -45,43 +46,13 @@ exports.handler = async (event, context) => {
     const newRefreshToken = createToken(tokenData, true);
 
     try {
-        const tokensResp = await db.query(
-            q.Map(
-                q.Paginate(q.Match(q.Index('TokensByUser'), userRef)),
-                q.Lambda('tokenRef', q.Get(q.Var('tokenRef')))
-            )
-        );
-
-        let currentTokenRef;
-        let isAlreadyUsed = false;
-        let invalidTokenRefs = [];
-
-        tokensResp.data.forEach(tokenDoc => {
-            const { token, used } = tokenDoc.data;
-            let verifiedToken;
-            console.log(tokenDoc.ref);
-
-            // Check if the token is still valid
-            try {
-                verifiedToken = verifyToken(token, true);
-            } catch(e) {
-                console.warn(`Db token expired: ${tokenDoc.ref}\n`, e);
-            }
-
-            // Update the status if it's the current refresh token
-            if(token === refreshToken) {
-                currentTokenRef = tokenDoc.ref;
-                isAlreadyUsed = used;
-            }
-
-            // Add the tokens which are still valid to the array
-            if(!verifiedToken) {
-                invalidTokenRefs.push(tokenDoc.ref);
-            }
-        });
+        // Verify the provided refresh token against the db and retrieve 
+        // the user's invalid tokens
+        const verifyResp = await verifyTokenWithDb(userRef, refreshToken);
+        const { tokenRef, isAlreadyUsed, invalidTokenRefs, tokensResp } = verifyResp;
 
         // Check if the current refresh token is untracked or used
-        if(!currentTokenRef || isAlreadyUsed) {
+        if(!tokenRef || isAlreadyUsed) {
             const tokenRefs = tokensResp.data.map(doc => doc.ref);
 
             // Delete all tokens on user
@@ -113,7 +84,7 @@ exports.handler = async (event, context) => {
         // Update current token's status
         await db.query(
             q.Update(
-                currentTokenRef,
+                tokenRef,
                 { data: { used: true }}
             )
         );

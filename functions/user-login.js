@@ -1,5 +1,6 @@
 const faunadb = require('faunadb');
 const bcrypt = require('bcrypt');
+const { findInvalidTokens } = require('./util/db/stored-tokens');
 const createToken = require('./auth/create-token');
 const createTokenCookies = require('./auth/create-token-cookies');
 const defaultHeaders = require('./util/default-headers.json');
@@ -50,9 +51,23 @@ exports.handler = async (event, context) => {
             throw error;
         }
 
+        // Find invalid tokens
+        const invalidTokenRefs = await findInvalidTokens(userDoc.ref);
+
+        // Delete invalid tokens
+        if(invalidTokenRefs.length > 0) {
+            const delResp = await db.query(
+                q.Map(
+                    invalidTokenRefs,
+                    q.Lambda('tokenRef', q.Delete(q.Var('tokenRef')))
+                )
+            );
+            console.log('del resp:\n', delResp);
+        }
+
         const tokenData = { userRef: userDoc.ref };
 
-        // Create the tokens
+        // Create new tokens
         accessToken = createToken(tokenData);
         refreshToken = createToken(tokenData, true);
 

@@ -1,5 +1,5 @@
 const faunadb = require('faunadb');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const createToken = require('./auth/create-token');
 const createTokenCookies = require('./auth/create-token-cookies');
 const defaultHeaders = require('./util/default-headers.json');

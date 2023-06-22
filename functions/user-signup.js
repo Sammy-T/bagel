@@ -1,11 +1,12 @@
 const faunadb = require('faunadb');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const createToken = require('./auth/create-token');
 const createTokenCookies = require('./auth/create-token-cookies');
 const defaultHeaders = require('./util/default-headers.json');
 
 const db = new faunadb.Client({ secret: process.env.SERVER_KEY });
 const q = faunadb.query;
+const saltRounds = 10;
 
 exports.handler = async (event, context) => {
     const data = new URLSearchParams(event.body);
@@ -34,8 +35,7 @@ exports.handler = async (event, context) => {
 
     // Hash the password
     try {
-        const salt = await bcrypt.genSalt(10);
-        hashedPwd = await bcrypt.hash(password, salt);
+        hashedPwd = await bcrypt.hash(password, saltRounds);
     } catch(err) {
         console.error(err);
         const errCode = 500;
